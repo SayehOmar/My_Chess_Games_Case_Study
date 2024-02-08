@@ -5,7 +5,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 
 # Loading data
-Rapid_df = pd.read_csv(r"CSV files\Rapid_Games.csv")
+Rapid_df = pd.read_csv(r"My_Chess_Games_Case_Study\CSV files\Rapid_Games.csv")
 
 # Create features
 Rapid_df["EloDifference"] = Rapid_df["WhiteElo"] - Rapid_df["BlackElo"]
@@ -29,6 +29,22 @@ y = Rapid_df["OmarsayehElo"]
 model = LinearRegression()
 model.fit(X, y)
 
+
+# Filter based on player name and calculate the average Elo rating
+if (Rapid_df["White"] == "omarsayeh").any():
+    monthly_elo_Rapid = (
+        Rapid_df[Rapid_df["White"] == "omarsayeh"]
+        .groupby(Rapid_df["Date"].dt.to_period("M"))["WhiteElo"]
+        .mean()
+    )
+elif (Rapid_df["Black"] == "omarsayeh").any():
+    monthly_elo_Rapid = (
+        Rapid_df[Rapid_df["Black"] == "omarsayeh"]
+        .groupby(Rapid_df["Date"].dt.to_period("M"))["BlackElo"]
+        .mean()
+    )
+
+
 # Predict future Elo for omarsayeh
 future_dates = pd.date_range(start="2023-01-01", end="2026-01-01", freq="D")
 future_data = pd.DataFrame({"Date": future_dates})
@@ -41,7 +57,18 @@ future_data["PredictedOmarsayehElo"] = model.predict(
 )
 
 # Plot results
-plt.plot(Rapid_df["Date"], Rapid_df["OmarsayehElo"], label="Actual Omarsayeh Elo")
+"""
+plt.plot(
+    [str(period) for period in monthly_elo_Rapid.index.to_timestamp()],
+    monthly_elo_Rapid.values,
+   marker="o",
+    label="Average Rapid games Elo Rating Over Time by Month",
+)
+"""
+monthly_elo_Rapid = pd.Series(monthly_elo_Rapid)
+print(monthly_elo_Rapid.dtype)
+# plt.plot(monthly_elo_Rapid.index.astype(str), monthly_elo_Rapid.values, marker="o")
+# print(monthly_elo_Rapid.dtypes)
 plt.plot(
     future_data["Date"],
     future_data["PredictedOmarsayehElo"],
